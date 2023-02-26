@@ -81,7 +81,7 @@ class Ranker:
         # ckpt = 'my_submission/weights.pt'
         # ckpt = 'my_submission/weights2.pt'
         ckpt = '../CGD/results/products-10k_uncropped_resnext50_SG_512_0.1_0.5_0.1_256_model_best.pth'
-        # {'mAP': 0.18936997723867746}
+        # {'mAP': 0.19}
         self.model.load_state_dict(torch.load(ckpt, map_location=self.device), strict=False)
         self.embedding_shape = config['feature_dim']
         # self.model.fc = torch.nn.Identity()

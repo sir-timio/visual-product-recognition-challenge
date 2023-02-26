@@ -46,9 +46,9 @@ class Model(nn.Module):
         aux_features = 2048
         self.features = None
         if backbone_type == 'resnet50':
-            backbone = resnet50(pretrained=True)
+            backbone = resnet50(pretrained=False)
         elif backbone_type == 'resnext50':
-            backbone = resnext50_32x4d(pretrained=True)
+            backbone = resnext50_32x4d(pretrained=False)
         elif backbone_type.split('-')[0] == 'efficientnet':
             from efficientnet_pytorch import EfficientNet
             backbone = EfficientNet.from_pretrained(backbone_type).to('cuda')
