@@ -4,7 +4,6 @@ from torch.nn import functional as F
 
 from resnet import resnet50, resnext50_32x4d
 
-
 def set_bn_eval(m):
     classname = m.__class__.__name__
     if classname.find('BatchNorm2d') != -1:
@@ -51,7 +50,6 @@ class Model(nn.Module):
         elif backbone_type == 'resnext50':
             backbone = resnext50_32x4d(pretrained=True)
         elif backbone_type.split('-')[0] == 'efficientnet':
-            print('check requirements.txt')
             from efficientnet_pytorch import EfficientNet
             backbone = EfficientNet.from_pretrained(backbone_type).to('cuda')
             self.features = backbone.extract_features

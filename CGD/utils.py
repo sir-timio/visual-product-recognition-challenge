@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import torch
 from PIL import Image
@@ -7,6 +8,8 @@ from torch.utils.data import Dataset
 from torch.utils.data.sampler import Sampler
 from torchvision import transforms
 
+import cv2
+import pandas as pd
 
 class ImageReader(Dataset):
 
@@ -26,6 +29,7 @@ class ImageReader(Dataset):
         for label, image_list in data_dict.items():
             self.images += image_list
             self.labels += [self.class_to_idx[label]] * len(image_list)
+        self.num_classes = len(set(self.labels))
 
     def __getitem__(self, index):
         path, target = self.images[index], self.labels[index]
@@ -37,8 +41,53 @@ class ImageReader(Dataset):
         return len(self.images)
 
 
+def read_image(image_file):
+    img = cv2.imread(
+        image_file, cv2.IMREAD_COLOR | cv2.IMREAD_IGNORE_ORIENTATION
+    )
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    if img is None:
+        raise ValueError('Failed to read {}'.format(image_file))
+    return img
+
+
+class Product10KDataset(Dataset):
+    def __init__(self, root='/mnt/data/CUPS/mcs_2023/products-10k', annotation_file='train.csv'):
+        self.root = root
+        self.imlist = pd.read_csv(os.path.join(root, annotation_file))
+        self.data_type = annotation_file.split('/')[-1].split('.')[0]
+
+        normalize = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+        if self.data_type == 'train':
+            self.transforms = transforms.Compose([
+                transforms.Resize((252, 252)), transforms.RandomCrop(224),
+                transforms.RandomHorizontalFlip(),
+                transforms.ToTensor(),
+                normalize])
+        else:
+            self.transforms = transforms.Compose([transforms.Resize((224, 224)), transforms.ToTensor(), normalize])
+        self.labels = self.imlist['class'].values
+        self.num_classes = len(self.imlist['class'].unique())
+
+    def __getitem__(self, index):
+        cv2.setNumThreads(6)
+
+        impath, target, _ = self.imlist.iloc[index]
+
+        full_imname = os.path.join(self.root, self.data_type, impath)
+        img = read_image(full_imname)
+
+        img = Image.fromarray(img)
+        img = self.transforms(img)
+
+        return img, target
+
+    def __len__(self):
+        return len(self.imlist)
+
 def recall(feature_vectors, feature_labels, rank, gallery_vectors=None, gallery_labels=None):
     num_features = len(feature_labels)
+    # print(num_features)
     feature_labels = torch.tensor(feature_labels, device=feature_vectors.device)
     gallery_vectors = feature_vectors if gallery_vectors is None else gallery_vectors
 
